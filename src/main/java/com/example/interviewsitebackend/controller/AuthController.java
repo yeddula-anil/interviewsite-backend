@@ -59,24 +59,30 @@ public class AuthController {
         return ResponseEntity.ok("Logged out successfully");
     }
     private void setAuthCookies(HttpServletResponse response, AuthResponse authResponse) {
-        Cookie accessCookie = new Cookie("accessToken", authResponse.getAccessToken());
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false); // use false only for local dev over HTTP
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(15 * 60); // 15 min
+        boolean isProduction = true; // set false if running backend locally
 
-        Cookie refreshCookie = new Cookie("refreshToken", authResponse.getRefreshToken());
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
-        System.out.println("Setting access cookie: " + accessCookie.getValue());
-        System.out.println("Setting refresh cookie: " + refreshCookie.getValue());
-        System.out.println("name from refresh token " + jwtService.extractUsername(refreshCookie.getValue()));
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", authResponse.getAccessToken())
+                .httpOnly(true)
+                .secure(isProduction) // ✅ must be true for deployed HTTPS backend
+                .path("/")
+                .maxAge(15 * 60)
+                .sameSite("None") // ✅ required for cross-origin cookies
+                .build();
 
-        response.addCookie(accessCookie);
-        response.addCookie(refreshCookie);
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
+                .httpOnly(true)
+                .secure(isProduction)
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite("None")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        System.out.println("✅ Cookies set (secure=" + isProduction + ")");
     }
+
 
     private void clearCookies(HttpServletResponse response) {
         Cookie accessCookie = new Cookie("accessToken", null);
@@ -125,19 +131,19 @@ public class AuthController {
         // ✅ Set access token cookie
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", newAccessToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(jwtService.getAccessExpiration() / 1000)
-                .sameSite("Lax") // "Lax" is safer for local dev
+                .sameSite("None") // "Lax" is safer for local dev
                 .build();
 
         // ✅ Set refresh token cookie
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", newRefreshToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(jwtService.getRefreshExpiration() / 1000)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
         System.out.println("Setting access cookie: " + accessCookie.getValue());
         System.out.println("Setting refresh cookie: " + refreshCookie.getValue());
