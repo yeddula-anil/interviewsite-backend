@@ -37,36 +37,43 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public AuthResponse register(@RequestBody RegisterRequest request, @RequestParam(required = false) String token, HttpServletResponse response) {
+    public AuthResponse register(@RequestBody RegisterRequest request, @RequestParam(required = false) String token, HttpServletResponse response,HttpServletRequest req) {
         AuthResponse authResponse = authService.register(request);
         if(token!=null){
             meetingService.handlePostSignup(token);
         }
-        setAuthCookies(response, authResponse);
+        setAuthCookies(req,response, authResponse);
         return authResponse;
 
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody AuthRequest request,HttpServletResponse response) {
-        AuthResponse authResponse = authService.login(request);
-        setAuthCookies(response, authResponse);
-        return authResponse;
+    public ResponseEntity<?> login(@RequestBody AuthRequest request, HttpServletResponse response,HttpServletRequest req) {
+        try {
+            AuthResponse authResponse = authService.login(request);
+            setAuthCookies(req, response, authResponse);
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            // Return 401 Unauthorized with a clear message
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         clearCookies(response);
         return ResponseEntity.ok("Logged out successfully");
     }
-    private void setAuthCookies(HttpServletResponse response, AuthResponse authResponse) {
-        boolean isProduction = true; // set false if running backend locally
+    private void setAuthCookies(HttpServletRequest request, HttpServletResponse response, AuthResponse authResponse) {
+        boolean isProduction = !"localhost".equalsIgnoreCase(request.getServerName());
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", authResponse.getAccessToken())
                 .httpOnly(true)
-                .secure(isProduction) // ✅ must be true for deployed HTTPS backend
+                .secure(isProduction)
                 .path("/")
                 .maxAge(15 * 60)
-                .sameSite("None") // ✅ required for cross-origin cookies
+                .sameSite(isProduction ? "None" : "Lax") // ✅ None for production, Lax for local
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
@@ -74,7 +81,7 @@ public class AuthController {
                 .secure(isProduction)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60)
-                .sameSite("None")
+                .sameSite(isProduction ? "None" : "Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
@@ -107,6 +114,8 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         System.out.println("refresh called");
+        System.out.println("Incoming cookies: " + Arrays.toString(request.getCookies()));
+
         Cookie[] cookies = request.getCookies();
         if (cookies == null) return ResponseEntity.status(401).body("No cookies found");
 
