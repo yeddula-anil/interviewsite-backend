@@ -1,4 +1,5 @@
 package com.example.interviewsitebackend.config;
+
 import com.example.interviewsitebackend.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.Arrays;
 import java.util.List;
 
 @EnableWebSecurity
@@ -26,15 +29,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // ✅ Disable CSRF because we are using JWT
                 .csrf(csrf -> csrf.disable())
+
+                // ✅ Enable our CORS configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // ✅ Define authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Allow all auth-related endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // All other requests require the user to be authenticated (any role)
+                        .requestMatchers("/api/auth/**").permitAll()  // login/register allowed
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+                // ✅ Add JWT filter before Spring Security’s auth filter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // ✅ This allows cookies to be included in responses
+                .headers(headers -> headers.frameOptions().sameOrigin());
 
         return http.build();
     }
@@ -52,19 +63,27 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // ✅ Allowed frontend URLs
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
                 "https://interviewsite-frontend.vercel.app"
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization")); // ✅ expose JWT + cookies
-        configuration.setAllowCredentials(true); // ✅ allow cookies/session sharing
+
+        // ✅ Must be true for cookies (accessToken / refreshToken)
+        configuration.setAllowCredentials(true);
+
+        // ✅ Expose Set-Cookie so browser can access it
+        configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
+
+        // ✅ Add this line — very important for Render
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
-
 }
