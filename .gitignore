@@ -49,4 +49,3 @@ docker-compose*.yml
 HELP.md
 # Sensitive files
 .env
-application.properties
