@@ -1,0 +1,52 @@
+# --- Build outputs ---
+target/
+build/
+
+# --- Maven Wrapper ---
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# --- Spring Tool Suite (STS) ---
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# --- NetBeans ---
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# --- VS Code ---
+.vscode/
+
+# --- Logs ---
+*.log
+logs/
+*.pid
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Docker ---
+.dockerignore
+Dockerfile.save
+docker-compose*.yml
+
+# --- Misc ---
+HELP.md
+# Sensitive files
+.env
+application.properties
