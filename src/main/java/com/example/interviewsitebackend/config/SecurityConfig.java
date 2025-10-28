@@ -64,26 +64,20 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ✅ Allowed frontend URLs
-        configuration.setAllowedOrigins(List.of(
+        configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",
                 "https://interviewsite-frontend.vercel.app"
         ));
-
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-
-        // ✅ Must be true for cookies (accessToken / refreshToken)
         configuration.setAllowCredentials(true);
-
-        // ✅ Expose Set-Cookie so browser can access it
         configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
-
-        // ✅ Add this line — very important for Render
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/ws/**", configuration); // ✅ Add this line
         return source;
     }
+
 }
