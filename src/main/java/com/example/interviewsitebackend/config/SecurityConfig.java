@@ -54,16 +54,17 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "https://interviewsite-frontend.vercel.app" // add when you deploy frontend later
+                "https://interviewsite-frontend.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Set-Cookie")); // ✅ expose cookies to frontend
-        configuration.setAllowCredentials(true); // ✅ allow cookies in cross-origin requests
+        configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization")); // ✅ expose JWT + cookies
+        configuration.setAllowCredentials(true); // ✅ allow cookies/session sharing
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
 }
