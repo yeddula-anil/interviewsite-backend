@@ -64,19 +64,27 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(List.of(
+        // 🛑 CRITICAL CHANGE 1: Use setAllowedOrigins for specific production URLs
+        // Replace 'interviewsite-frontend.vercel.app' with your actual Vercel domain.
+        configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "https://interviewsite-frontend.vercel.app"
+                "https://interviewsite-frontend.vercel.app" // 🎯 Use HTTPS for Vercel
         ));
+        // configuration.setAllowedOriginPatterns(List.of(...)); // Remove this if using setAllowedOrigins
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
+
+        // ✅ CRITICAL CHANGE 2: Keep this, as it allows cookies (credentials) to be sent
         configuration.setAllowCredentials(true);
+
         configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        source.registerCorsConfiguration("/ws/**", configuration); // ✅ Add this line
+        // You can remove this unless you actually use WebSockets.
+        // source.registerCorsConfiguration("/ws/**", configuration);
         return source;
     }
 
