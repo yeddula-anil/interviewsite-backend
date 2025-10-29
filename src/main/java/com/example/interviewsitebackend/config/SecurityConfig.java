@@ -62,30 +62,24 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
 
-        // 🛑 CRITICAL CHANGE 1: Use setAllowedOrigins for specific production URLs
-        // Replace 'interviewsite-frontend.vercel.app' with your actual Vercel domain.
-        configuration.setAllowedOrigins(List.of(
+        config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "https://interviewsite-frontend.vercel.app" // 🎯 Use HTTPS for Vercel
+                "https://interviewsite-frontend.vercel.app"
         ));
-        // configuration.setAllowedOriginPatterns(List.of(...)); // Remove this if using setAllowedOrigins
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
 
-        // ✅ CRITICAL CHANGE 2: Keep this, as it allows cookies (credentials) to be sent
-        configuration.setAllowCredentials(true);
-
-        configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
-        configuration.setMaxAge(3600L);
+        // ✅ MUST BE TRUE — allows sending cookies
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        // You can remove this unless you actually use WebSockets.
-        // source.registerCorsConfiguration("/ws/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 
 }
