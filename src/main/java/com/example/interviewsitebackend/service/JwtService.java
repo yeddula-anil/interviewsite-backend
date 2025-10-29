@@ -1,11 +1,11 @@
 package com.example.interviewsitebackend.service;
 
-
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.util.*;
+
+import java.util.Date;
 import java.security.Key;
 
 @Service
@@ -14,33 +14,24 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    @Value("${jwt.expiration}")
-    private long JWT_EXPIRATION;
-
-    @Value("${jwt.refreshExpiration}")
-    private long REFRESH_EXPIRATION;
+    // ✅ Token valid for 1 day (24 hours)
+    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    public String generateAccessToken(String username) {
-        return buildToken(username, JWT_EXPIRATION);
-    }
-
-    public String generateRefreshToken(String username) {
-        return buildToken(username, REFRESH_EXPIRATION);
-    }
-
-    private String buildToken(String username, long expiration) {
+    // ✅ Generate only one token (no refresh)
+    public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // ✅ Extract username from token
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -50,20 +41,17 @@ public class JwtService {
                 .getSubject();
     }
 
+    // ✅ Validate token
     public boolean isTokenValid(String token) {
         try {
             extractUsername(token);
             return true;
-        } catch (Exception e) {
+        } catch (JwtException e) {
             return false;
         }
-    }
-    public long getRefreshExpiration() {
-        return REFRESH_EXPIRATION;
     }
 
     public long getAccessExpiration() {
         return JWT_EXPIRATION;
     }
 }
-

@@ -1,28 +1,26 @@
 package com.example.interviewsitebackend.util;
 
-
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import java.util.*;
+
+import java.util.Date;
 import java.security.Key;
 
 @Component
 public class JwtUtil {
 
     private final Key key;
-    private final long jwtExpiration;
-    private final long refreshExpiration;
+    private final long jwtExpiration; // in milliseconds
 
     public JwtUtil(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long jwtExpiration,
-            @Value("${jwt.refreshExpiration}") long refreshExpiration
+            @Value("${jwt.secret}") String secret
+
     ) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
-        this.jwtExpiration = jwtExpiration;
-        this.refreshExpiration = refreshExpiration;
+        // ✅ 1 day = 24 * 60 * 60 * 1000 ms
+        this.jwtExpiration = 24 * 60 * 60 * 1000;
     }
 
     public String generateAccessToken(String userId, String email) {
@@ -31,16 +29,6 @@ public class JwtUtil {
                 .claim("userId", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public String generateRefreshToken(String userId, String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .claim("userId", userId)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -66,4 +54,3 @@ public class JwtUtil {
                 .getBody();
     }
 }
-

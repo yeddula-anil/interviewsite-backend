@@ -4,7 +4,6 @@ import com.example.interviewsitebackend.repo.UserRepository;
 import com.example.interviewsitebackend.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,32 +31,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // ✅ 1. Skip JWT check for auth endpoints
+        // ✅ 1. Skip authentication for public endpoints
         String path = request.getServletPath();
-        if (path.startsWith("/api/auth")) {
+        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup")){
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ✅ 2. Extract token from cookies
+        // ✅ 2. Get token from Authorization header
+        final String authHeader = request.getHeader("Authorization");
         String token = null;
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("accessToken".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
         }
 
         if (token == null) {
-            System.out.println("⚠️ No access token found in cookies for " + path);
+            System.out.println("⚠️ No JWT found in Authorization header for " + path);
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // ✅ 3. Validate token and authenticate user
-        if (token != null && jwtUtil.isTokenValid(token)) {
+        // ✅ 3. Validate token and set authentication
+        if (jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
-            System.out.println("✅ Token valid for user: " + email);
+            System.out.println("✅ Valid token for user: " + email);
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 var userEntity = userRepository.findByEmail(email).orElse(null);
@@ -75,6 +72,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     System.out.println("🔐 Authenticated user: " + email);
                 }
             }
+        } else {
+            System.out.println("❌ Invalid or expired token");
         }
 
         // ✅ 4. Continue filter chain

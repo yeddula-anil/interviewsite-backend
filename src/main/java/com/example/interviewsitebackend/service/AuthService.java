@@ -1,6 +1,5 @@
 package com.example.interviewsitebackend.service;
 
-
 import com.example.interviewsitebackend.dto.*;
 import com.example.interviewsitebackend.model.User;
 import com.example.interviewsitebackend.repo.UserRepository;
@@ -18,8 +17,9 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent())
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already registered");
+        }
 
         User user = User.builder()
                 .username(request.getUsername())
@@ -30,14 +30,13 @@ public class AuthService {
 
         userRepository.save(user);
 
+        // ✅ Only Access Token (valid for 1 day)
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getEmail());
 
         return AuthResponse.builder()
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -45,18 +44,17 @@ public class AuthService {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword()))
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
+        }
 
+        // ✅ Only Access Token (valid for 1 day)
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getEmail());
 
         return AuthResponse.builder()
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .build();
     }
 }
-

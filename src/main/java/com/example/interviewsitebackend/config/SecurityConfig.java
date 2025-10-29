@@ -56,7 +56,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(
                 "https://interviewsite-frontend.onrender.com",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "https://interviewsite-frontend.vercel.app"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.addAllowedHeader("*"); // ✅ allow all headers
