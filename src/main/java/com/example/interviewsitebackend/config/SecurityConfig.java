@@ -65,21 +65,20 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "https://interviewsite-frontend.vercel.app"
+                "https://interviewsite-frontend.vercel.app",
+                "https://interviewsite-frontend.onrender.com",
+                "http://localhost:3000"
         ));
-
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         config.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
-
-        // ✅ MUST BE TRUE — allows sending cookies
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(true); // 👈 MUST BE TRUE
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 
 
 }
