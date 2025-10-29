@@ -41,9 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
+        if(token == null) {
+            System.out.println("System.out.present no token is present");
+        }
 
         if (token != null && jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
+            System.out.println(email+"from jwt filter");
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 var userEntity = userRepository.findByEmail(email).orElse(null);
