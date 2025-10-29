@@ -37,7 +37,7 @@ public class SecurityConfig {
 
                 // ✅ Define authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // login/register allowed
+                        .requestMatchers("/api/auth/**", "/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -64,7 +64,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of(
+        config.setAllowedOriginPatterns(List.of(
                 "https://interviewsite-frontend.vercel.app",
                 "https://interviewsite-frontend.onrender.com",
                 "http://localhost:3000"
@@ -72,12 +72,13 @@ public class SecurityConfig {
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         config.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
-        config.setAllowCredentials(true); // 👈 MUST BE TRUE
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 
 
 
