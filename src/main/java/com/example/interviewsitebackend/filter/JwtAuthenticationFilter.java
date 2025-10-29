@@ -32,6 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        // ✅ 1. Skip JWT check for auth endpoints
+        String path = request.getServletPath();
+        if (path.startsWith("/api/auth")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ✅ 2. Extract token from cookies
         String token = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -41,13 +49,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
-        if(token == null) {
-            System.out.println("no token is present");
+
+        if (token == null) {
+            System.out.println("⚠️ No access token found in cookies for " + path);
         }
 
+        // ✅ 3. Validate token and authenticate user
         if (token != null && jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
-            System.out.println(email+"from jwt filter");
+            System.out.println("✅ Token valid for user: " + email);
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 var userEntity = userRepository.findByEmail(email).orElse(null);
@@ -62,12 +72,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("Authenticated user: " + email);
+                    System.out.println("🔐 Authenticated user: " + email);
                 }
             }
         }
 
-        // ⚡ Always continue the filter chain
+        // ✅ 4. Continue filter chain
         filterChain.doFilter(request, response);
     }
 }
