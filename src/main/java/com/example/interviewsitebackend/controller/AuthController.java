@@ -68,37 +68,48 @@ public class AuthController {
     }
 
     // ----------------------- COOKIE SETUP -----------------------
+    // In AuthController.java
+
     private void setAuthCookies(HttpServletRequest request,
                                 HttpServletResponse response,
                                 AuthResponse authResponse) {
 
-        boolean isProduction = !request.getServerName().contains("localhost");
+        // 🛑 BETTER LOGIC: Check if running on HTTPS (standard for production).
+        // The safest approach for cross-origin deployment is often to assume production settings
+        // unless explicitly running on a well-known local HTTP address.
+        boolean isSecure = request.isSecure() || request.getHeader("X-Forwarded-Proto") != null;
+        boolean isLocalhost = request.getServerName().contains("localhost") || request.getServerName().contains("127.0.0.1");
 
-        // ✅ Force SameSite=None and Secure=true for Render HTTPS
+        // In cross-origin setup, if it's secure, SameSite MUST be None. Otherwise, use Lax for local.
+        String sameSiteValue = isSecure && !isLocalhost ? "None" : "Lax";
+        boolean secureFlag = isSecure && !isLocalhost; // True for Vercel/Render, false for local HTTP
+
+        // --- Access Token Cookie ---
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", authResponse.getAccessToken())
                 .httpOnly(true)
-                .secure(isProduction) // true in production
+                .secure(secureFlag) // ✅ FIX: Use dynamic check that includes X-Forwarded-Proto for Render
                 .path("/")
-                .sameSite(isProduction ? "None" : "Lax")
+                .sameSite(sameSiteValue) // ✅ FIX: None in production, Lax locally
                 .maxAge(15 * 60)
                 .build();
 
+        // --- Refresh Token Cookie ---
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
                 .httpOnly(true)
-                .secure(isProduction)
+                .secure(secureFlag) // ✅ FIX APPLIED HERE TOO
                 .path("/")
-                .sameSite(isProduction ? "None" : "Lax")
+                .sameSite(sameSiteValue) // ✅ FIX APPLIED HERE TOO
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
 
-        // ⚠️ This header must be added only once per response, not per cookie
-        response.setHeader("Access-Control-Allow-Credentials", "true");
+        // Remove this line. It should be handled by your Spring Security CorsConfig.
+        // response.setHeader("Access-Control-Allow-Credentials", "true");
 
         // ✅ Add both cookies properly
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        System.out.println("✅ Cookies set (secure=" + isProduction + ")");
+        System.out.println("✅ Cookies set (secure=" + secureFlag + ", sameSite=" + sameSiteValue + ")");
     }
 
     // ----------------------- CLEAR COOKIES -----------------------
