@@ -6,6 +6,8 @@ import com.example.interviewsitebackend.service.AuthService;
 import com.example.interviewsitebackend.service.JwtService;
 import com.example.interviewsitebackend.service.MeetingService;
 import com.example.interviewsitebackend.service.UserService;
+import com.example.interviewsitebackend.util.JwtUtil;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class AuthController {
     private final MeetingService meetingService;
     private final JwtService jwtService;
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
     // ----------------------- REGISTER -----------------------
     @PostMapping("/register")
@@ -74,31 +77,23 @@ public class AuthController {
                                 HttpServletResponse response,
                                 AuthResponse authResponse) {
 
-        // 🛑 BETTER LOGIC: Check if running on HTTPS (standard for production).
-        // The safest approach for cross-origin deployment is often to assume production settings
-        // unless explicitly running on a well-known local HTTP address.
-        boolean isSecure = request.isSecure() || request.getHeader("X-Forwarded-Proto") != null;
-        boolean isLocalhost = request.getServerName().contains("localhost") || request.getServerName().contains("127.0.0.1");
 
-        // In cross-origin setup, if it's secure, SameSite MUST be None. Otherwise, use Lax for local.
-        String sameSiteValue = isSecure && !isLocalhost ? "None" : "Lax";
-        boolean secureFlag = isSecure && !isLocalhost; // True for Vercel/Render, false for local HTTP
 
         // --- Access Token Cookie ---
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", authResponse.getAccessToken())
                 .httpOnly(true)
-                .secure(secureFlag) // ✅ FIX: Use dynamic check that includes X-Forwarded-Proto for Render
+                .secure(true) // ✅ FIX: Use dynamic check that includes X-Forwarded-Proto for Render
                 .path("/")
-                .sameSite(sameSiteValue) // ✅ FIX: None in production, Lax locally
+                .sameSite("None") // ✅ FIX: None in production, Lax locally
                 .maxAge(15 * 60)
                 .build();
 
         // --- Refresh Token Cookie ---
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
                 .httpOnly(true)
-                .secure(secureFlag) // ✅ FIX APPLIED HERE TOO
+                .secure(true) // ✅ FIX APPLIED HERE TOO
                 .path("/")
-                .sameSite(sameSiteValue) // ✅ FIX APPLIED HERE TOO
+                .sameSite("None") // ✅ FIX APPLIED HERE TOO
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
 
@@ -109,7 +104,7 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        System.out.println("✅ Cookies set (secure=" + secureFlag + ", sameSite=" + sameSiteValue + ")");
+        System.out.println("✅ Cookies set (secure=" + true + ", sameSite=" + "None" + ")");
     }
 
     // ----------------------- CLEAR COOKIES -----------------------
@@ -157,16 +152,16 @@ public class AuthController {
             return ResponseEntity.status(401).body("Invalid refresh token");
         }
 
-        String username = jwtService.extractUsername(refreshToken);
-        Optional<User> optionalUser = userService.findByEmail(username);
+        String email = jwtUtil.extractEmail(refreshToken);
+        Optional<User> optionalUser = userService.findByEmail(email);
         if (optionalUser.isEmpty()) {
             return ResponseEntity.status(401).body("User not found");
         }
 
         User user = optionalUser.get();
 
-        String newAccessToken = jwtService.generateAccessToken(username);
-        String newRefreshToken = jwtService.generateRefreshToken(username);
+        String newAccessToken = jwtService.generateAccessToken(optionalUser.get().getUsername());
+        String newRefreshToken = jwtService.generateRefreshToken(optionalUser.get().getUsername());
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", newAccessToken)
                 .httpOnly(true)
