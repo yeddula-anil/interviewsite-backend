@@ -85,6 +85,7 @@ public class AuthController {
                 .secure(true) // ✅ FIX: Use dynamic check that includes X-Forwarded-Proto for Render
                 .path("/")
                 .sameSite("None") // ✅ FIX: None in production, Lax locally
+                .domain("onrender.com")
                 .maxAge(15 * 60)
                 .build();
 
@@ -93,7 +94,8 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true) // ✅ FIX APPLIED HERE TOO
                 .path("/")
-                .sameSite("None") // ✅ FIX APPLIED HERE TOO
+                .sameSite("None")// ✅ FIX APPLIED HERE TOO
+                .domain("onrender.com")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
 
@@ -168,6 +170,7 @@ public class AuthController {
                 .secure(true)
                 .path("/")
                 .sameSite("None")
+                .domain("onrender.com")
                 .maxAge(jwtService.getAccessExpiration() / 1000)
                 .build();
 
@@ -176,6 +179,7 @@ public class AuthController {
                 .secure(true)
                 .path("/")
                 .sameSite("None")
+                .domain("onrender.com")
                 .maxAge(jwtService.getRefreshExpiration() / 1000)
                 .build();
 
