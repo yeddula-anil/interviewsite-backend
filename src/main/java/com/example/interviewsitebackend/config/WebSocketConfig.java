@@ -11,7 +11,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("https://interviewsite-frontend.vercel.app","http://localhost:3000") // allow your frontend
+                .setAllowedOriginPatterns("https://interviewsite-frontend.vercel.app","http://localhost:3000","https://interviewsite-frontend.onrender.com") // allow your frontend
                 .withSockJS();
     }
 
