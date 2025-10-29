@@ -42,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         if(token == null) {
-            System.out.println("System.out.present no token is present");
+            System.out.println("no token is present");
         }
 
         if (token != null && jwtUtil.isTokenValid(token)) {
