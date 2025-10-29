@@ -101,7 +101,7 @@ public class AuthController {
         // response.setHeader("Access-Control-Allow-Credentials", "true");
 
         // ✅ Add both cookies properly
-        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.setHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         System.out.println("✅ Cookies set (secure=" + true + ", sameSite=" + "None" + ")");
@@ -179,7 +179,7 @@ public class AuthController {
                 .maxAge(jwtService.getRefreshExpiration() / 1000)
                 .build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.setHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         System.out.println("✅ Tokens refreshed successfully");
