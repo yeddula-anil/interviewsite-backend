@@ -1,4 +1,5 @@
 package com.example.interviewsitebackend.config;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
@@ -7,18 +8,29 @@ import org.springframework.web.socket.config.annotation.*;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    // STOMP endpoint clients connect to (SockJS fallback included)
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("https://interviewsite-frontend.vercel.app","http://localhost:3000","https://interviewsite-frontend.onrender.com") // allow your frontend
+                .setAllowedOriginPatterns(
+                        "https://interviewsite-frontend.vercel.app",
+                        "https://interviewsite-frontend.onrender.com",
+                        "http://localhost:3000",
+                        "*" // for testing — remove later in production
+                )
                 .withSockJS();
     }
 
-    // simple broker for topics
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");          // broadcast to subscribers
-        registry.setApplicationDestinationPrefixes("/app"); // client -> server prefix
+        registry.enableSimpleBroker("/topic");
+        registry.setApplicationDestinationPrefixes("/app");
+    }
+
+    // Optional: allow larger signaling messages
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
+        registry.setMessageSizeLimit(2 * 1024 * 1024); // 2MB
+        registry.setSendBufferSizeLimit(2 * 1024 * 1024);
+        registry.setSendTimeLimit(20000);
     }
 }
