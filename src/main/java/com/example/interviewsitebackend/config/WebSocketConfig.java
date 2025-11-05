@@ -16,7 +16,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "https://interviewsite-frontend.onrender.com",
                         "http://localhost:3000"
                 )
-                .setAllowedOrigins("*") // only keep for testing
+                // only keep for testing
                 .withSockJS();
     }
 
