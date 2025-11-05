@@ -14,23 +14,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns(
                         "https://interviewsite-frontend.vercel.app",
                         "https://interviewsite-frontend.onrender.com",
-                        "http://localhost:3000",
-                        "*" // for testing — remove later in production
+                        "http://localhost:3000"
                 )
+                .setAllowedOrigins("*") // only keep for testing
                 .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
+        // clients can subscribe to /topic/...
         registry.enableSimpleBroker("/topic");
+        // clients send messages to /app/...
         registry.setApplicationDestinationPrefixes("/app");
     }
 
-    // Optional: allow larger signaling messages
     @Override
     public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
-        registry.setMessageSizeLimit(2 * 1024 * 1024); // 2MB
+        // Allow larger signaling messages (for SDP)
+        registry.setMessageSizeLimit(2 * 1024 * 1024);
         registry.setSendBufferSizeLimit(2 * 1024 * 1024);
-        registry.setSendTimeLimit(20000);
+        registry.setSendTimeLimit(20_000);
     }
 }

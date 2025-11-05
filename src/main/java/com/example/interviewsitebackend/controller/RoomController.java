@@ -16,7 +16,7 @@ public class RoomController {
     public ResponseEntity<Map<String, Object>> joinRoom(@PathVariable String roomId,
                                                         @RequestBody Map<String, String> body) {
         String name = body.get("name");
-        String role = body.getOrDefault("role", "candidate"); // "recruiter" or "candidate"
+        String role = body.getOrDefault("role", "CANDIDATE").toUpperCase(); // "recruiter" or "candidate"
         rooms.putIfAbsent(roomId, new LinkedHashMap<>());
         rooms.get(roomId).put(name, role);
 
@@ -25,7 +25,7 @@ public class RoomController {
         resp.put("count", rooms.get(roomId).size());
 
         // Determine if recruiter is present
-        boolean hasRecruiter = rooms.get(roomId).values().stream().anyMatch(r -> r.equals("recruiter"));
+        boolean hasRecruiter = rooms.get(roomId).values().stream().anyMatch(r -> r.equals("RECRUITER"));
         resp.put("hasRecruiter", hasRecruiter);
 
         return ResponseEntity.ok(resp);
