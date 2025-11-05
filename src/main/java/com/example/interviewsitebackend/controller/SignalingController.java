@@ -16,7 +16,13 @@ public class SignalingController {
 
     @MessageMapping("/signal/{roomId}")
     public void handleSignal(@DestinationVariable String roomId, @Payload SignalMessage message) {
+        // Normalize type casing before broadcasting
+        if (message.getType() != null) {
+            message.setType(message.getType().toUpperCase());
+        }
+
         System.out.printf("room=%s from=%s type=%s%n", roomId, message.getSender(), message.getType());
         messagingTemplate.convertAndSend("/topic/signal/" + roomId, message);
     }
+
 }
