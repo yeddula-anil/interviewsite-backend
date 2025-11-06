@@ -18,40 +18,26 @@ public class RoomController {
     public ResponseEntity<Map<String, Object>> joinRoom(@PathVariable String roomId,
                                                         @RequestBody Map<String, String> body) {
         String name = body.get("name");
-        String role = body.getOrDefault("role", "CANDIDATE").toUpperCase(); // "RECRUITER" or "CANDIDATE"
+        String role = body.getOrDefault("role", "participant").toLowerCase();
 
-        // Create room if it doesn't exist (this is thread-safe)
-        // ⚠️ We MUST NOT use Collections.synchronizedMap here, as putIfAbsent will
-        // create a *new* LinkedHashMap every time, causing a race condition.
-        // Instead, we create it and lock on the 'participants' object below.
         rooms.putIfAbsent(roomId, new LinkedHashMap<>());
-
-        // Get the specific map for this room
         LinkedHashMap<String, String> participants = rooms.get(roomId);
 
-        Map<String, Object> resp = new HashMap<>();
-        Map<String, String> participantsCopy;
-        boolean hasRecruiter;
-        int count;
-
-        // ✅ FIX: Lock the 'participants' map before modifying or reading it.
-        // This prevents race conditions if two users join at the same time.
+        boolean isOfferer;
         synchronized (participants) {
             participants.put(name, role);
-            // Create a copy *inside the lock* for a consistent snapshot
-            participantsCopy = new LinkedHashMap<>(participants);
+            // if this is the first participant in the room, make them offerer
+            isOfferer = (participants.size() == 1);
         }
 
-        // Do CPU-intensive work (like streams) *outside* the lock
-        hasRecruiter = participantsCopy.values().stream().anyMatch(r -> r.equals("RECRUITER"));
-        count = participantsCopy.size();
-
-        resp.put("participants", participantsCopy);
-        resp.put("count", count);
-        resp.put("hasRecruiter", hasRecruiter);
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("count", participants.size());
+        resp.put("participants", new LinkedHashMap<>(participants));
+        resp.put("isOfferer", isOfferer);
 
         return ResponseEntity.ok(resp);
     }
+
 
     @PostMapping("/{roomId}/leave")
     public ResponseEntity<Void> leaveRoom(@PathVariable String roomId,
