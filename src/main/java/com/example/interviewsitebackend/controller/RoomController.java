@@ -26,17 +26,18 @@ public class RoomController {
         boolean isOfferer;
         synchronized (participants) {
             participants.put(name, role);
-            // if this is the first participant in the room, make them offerer
+            // The first user to join the room becomes the offerer
             isOfferer = (participants.size() == 1);
         }
 
         Map<String, Object> resp = new HashMap<>();
-        resp.put("count", participants.size());
         resp.put("participants", new LinkedHashMap<>(participants));
+        resp.put("count", participants.size());
         resp.put("isOfferer", isOfferer);
 
         return ResponseEntity.ok(resp);
     }
+
 
 
     @PostMapping("/{roomId}/leave")
