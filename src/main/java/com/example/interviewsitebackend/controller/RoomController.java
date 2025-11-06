@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RoomController {
 
     // roomId -> map of participants (name -> role)
+    // ✅ This outer map is thread-safe
     private final Map<String, LinkedHashMap<String, String>> rooms = new ConcurrentHashMap<>();
 
     @PostMapping("/{roomId}/join")
@@ -19,20 +20,34 @@ public class RoomController {
         String name = body.get("name");
         String role = body.getOrDefault("role", "CANDIDATE").toUpperCase(); // "RECRUITER" or "CANDIDATE"
 
-        // Create room if it doesn't exist
+        // Create room if it doesn't exist (this is thread-safe)
+        // ⚠️ We MUST NOT use Collections.synchronizedMap here, as putIfAbsent will
+        // create a *new* LinkedHashMap every time, causing a race condition.
+        // Instead, we create it and lock on the 'participants' object below.
         rooms.putIfAbsent(roomId, new LinkedHashMap<>());
 
-        // ✅ Prevent duplicate joins (don’t re-add same user)
+        // Get the specific map for this room
         LinkedHashMap<String, String> participants = rooms.get(roomId);
-        participants.put(name, role);
 
-        // ✅ Compute recruiter presence correctly
-        boolean hasRecruiter = participants.values().stream().anyMatch(r -> r.equals("RECRUITER"));
-
-        // ✅ Prepare response
         Map<String, Object> resp = new HashMap<>();
-        resp.put("participants", participants);
-        resp.put("count", participants.size());
+        Map<String, String> participantsCopy;
+        boolean hasRecruiter;
+        int count;
+
+        // ✅ FIX: Lock the 'participants' map before modifying or reading it.
+        // This prevents race conditions if two users join at the same time.
+        synchronized (participants) {
+            participants.put(name, role);
+            // Create a copy *inside the lock* for a consistent snapshot
+            participantsCopy = new LinkedHashMap<>(participants);
+        }
+
+        // Do CPU-intensive work (like streams) *outside* the lock
+        hasRecruiter = participantsCopy.values().stream().anyMatch(r -> r.equals("RECRUITER"));
+        count = participantsCopy.size();
+
+        resp.put("participants", participantsCopy);
+        resp.put("count", count);
         resp.put("hasRecruiter", hasRecruiter);
 
         return ResponseEntity.ok(resp);
@@ -42,20 +57,36 @@ public class RoomController {
     public ResponseEntity<Void> leaveRoom(@PathVariable String roomId,
                                           @RequestBody Map<String, String> body) {
         String name = body.get("name");
-        if (rooms.containsKey(roomId)) {
-            rooms.get(roomId).remove(name);
+        LinkedHashMap<String, String> participants = rooms.get(roomId); // Get the map
 
-            // If room is empty, remove it entirely
-            if (rooms.get(roomId).isEmpty()) {
-                rooms.remove(roomId);
+        if (participants != null) {
+            boolean wasEmpty = false;
+
+            // ✅ FIX: Lock the specific room's participant list for modification
+            synchronized (participants) {
+                participants.remove(name);
+                wasEmpty = participants.isEmpty();
+            }
+
+            // If it's empty, we need to remove it from the main 'rooms' map.
+            // This requires a lock on the outer 'rooms' map.
+            if (wasEmpty) {
+                synchronized (rooms) {
+                    // ✅ Re-check emptiness *inside the lock*
+                    // in case someone joined between the 'participants' lock and the 'rooms' lock.
+                    if (participants.isEmpty()) {
+                        rooms.remove(roomId);
+                    }
+                }
             }
         }
         return ResponseEntity.ok().build();
     }
 
-    // ✅ Optional: GET endpoint to debug active rooms
     @GetMapping
     public ResponseEntity<Map<String, LinkedHashMap<String, String>>> getAllRooms() {
+        // This is okay for debugging, but for a production-safe view,
+        // you would need to lock and deep-copy all rooms.
         return ResponseEntity.ok(rooms);
     }
 }
