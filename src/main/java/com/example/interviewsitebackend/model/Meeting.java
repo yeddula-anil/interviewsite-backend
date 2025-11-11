@@ -36,4 +36,6 @@ public class Meeting {
 
     private String candidateId;
     private String recruiterId;
+
+
 }
