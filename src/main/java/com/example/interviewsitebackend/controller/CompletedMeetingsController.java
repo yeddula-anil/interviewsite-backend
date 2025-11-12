@@ -26,7 +26,7 @@ public class CompletedMeetingsController {
     public ResponseEntity<String> saveCompletedMeeting(@PathVariable String meetingId) {
         // Fetch meeting details
         Optional<Meeting> optional = meetingRepository.findById(meetingId);
-        if(optional.isPresent()) {
+        if(!optional.isPresent()) {
             throw new RuntimeException("meeting not found");
         }
         Meeting meeting=optional.get();
@@ -44,7 +44,7 @@ public class CompletedMeetingsController {
         // Save to completed_meetings collection
         completedMeetingsRepository.save(completedMeeting);
 
-        return ResponseEntity.ok("✅ Meeting marked as completed and stored successfully.");
+        return ResponseEntity.ok("✅ Meeting marked as completed and stored successfully");
     }
     @GetMapping("/candidate/{email}")
     public ResponseEntity<List<CompletedMeetings>> getMeetingsByCandidateEmail(@PathVariable String email) {
