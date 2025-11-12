@@ -16,6 +16,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -133,6 +134,15 @@ public class MeetingController {
             return ResponseEntity.badRequest().body("Error restoring meeting: " + e.getMessage());
         }
     }
+    @GetMapping("/{meetingId}")
+    public ResponseEntity<?> getMeeting(@PathVariable String meetingId) {
+        return meetingRepository.findById(meetingId)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Meeting not found")));
+    }
+
 
 
 
