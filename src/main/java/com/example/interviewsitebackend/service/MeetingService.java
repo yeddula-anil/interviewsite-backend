@@ -51,33 +51,56 @@ public class MeetingService {
                 .build();
 
         inviteRepo.save(invite);
-        meetingRepo.save(meeting);
-        System.out.println("meeting scheduled");
+//        meetingRepo.save(meeting);
+//        System.out.println("meeting scheduled");
         sendInviteEmail(invite);
     }
 
     private void sendInviteEmail(MeetingInviteToken invite) {
-        String acceptUrl = "http://localhost:3000/signup?token=" + invite.getToken(); // frontend URL
+        String acceptUrl;
+        String rejectUrl;
+        boolean candidateExists=false;
+        Optional<User> opt= userRepo.findByEmail(invite.getCandidateEmail());
+        if(opt.isPresent()){
+            candidateExists=true;
+
+        }
+        if (candidateExists) {
+            // Candidate already has an account → directly hit backend accept
+            acceptUrl = "https://interviewsite-backend.onrender.com/api/meetings/accept?token=" + invite.getToken();
+            rejectUrl = "https://interviewsite-backend.onrender.com/reject?token=" + invite.getToken();
+        } else {
+            // New candidate → Must signup first
+            acceptUrl = "https://interviewsite-frontend.vercel.app/auth/signup?token=" + invite.getToken();
+            rejectUrl = "https://interviewsite-backend.onrender.com/reject?token=" + invite.getToken();
+        }
 
         String html = """
-            <div style="font-family:Arial,sans-serif">
-                <h2>Interview Invitation from %s</h2>
-                <img src="%s" alt="Company Logo" width="100"/>
-                <p><strong>Company:</strong> %s</p>
-                <p><strong>Role:</strong> %s</p>
-                <p><strong>Date:</strong> %s</p>
-                <p><strong>Time:</strong> %s</p>
+        <div style="font-family:Arial,sans-serif">
+            <h2>Interview Invitation from %s</h2>
+            <img src="%s" alt="Company Logo" width="100"/>
+            <p><strong>Company:</strong> %s</p>
+            <p><strong>Role:</strong> %s</p>
+            <p><strong>Date:</strong> %s</p>
+            <p><strong>Time:</strong> %s</p>
+
+            <div style="margin-top:20px;">
                 <a href="%s" style="background:#4CAF50;color:white;padding:10px 20px;
-                   text-decoration:none;border-radius:5px;">Accept Meeting</a>
+                   text-decoration:none;border-radius:5px;margin-right:10px;">Accept</a>
+
+                <a href="%s" style="background:#d9534f;color:white;padding:10px 20px;
+                   text-decoration:none;border-radius:5px;">Reject</a>
             </div>
-        """.formatted(
+        </div>
+    """.formatted(
                 invite.getRecruiterName(),
                 invite.getCompanyLogoUrl(),
                 invite.getCompanyName(),
                 invite.getRole(),
                 invite.getDate(),
                 invite.getTime(),
-                acceptUrl
+                acceptUrl,
+                rejectUrl
         );
 
         try {
@@ -92,6 +115,7 @@ public class MeetingService {
         }
     }
 
+
     // Handle candidate clicking Accept link
     public String handleMeetingAcceptance(String token) {
         Optional<MeetingInviteToken> tokenOpt = inviteRepo.findByToken(token);
@@ -102,7 +126,8 @@ public class MeetingService {
 
         if (userOpt.isPresent()) {
             // User exists → store meeting
-            storeMeeting(invite);
+            Meeting meeting=storeMeeting(invite);
+            sendAcceptanceConfirmationEmail(meeting);
             invite.setAccepted(true);
             inviteRepo.save(invite);
             return "accepted";
@@ -117,9 +142,10 @@ public class MeetingService {
             Optional<MeetingInviteToken> tokenOpt = inviteRepo.findByToken(token);
             if (tokenOpt.isPresent() && !tokenOpt.get().isAccepted()) {
                 MeetingInviteToken invite = tokenOpt.get();
-                storeMeeting(invite);
+                Meeting meeting=storeMeeting(invite);
                 invite.setAccepted(true);
                 inviteRepo.save(invite);
+                sendAcceptanceConfirmationEmail(meeting);
             }
         }
     }
@@ -246,6 +272,7 @@ public class MeetingService {
         System.out.println("Meeting with id " + meeting.getId() + " has been saved");
         return meetingRepo.save(meeting);
     }
+   
 
 
 }

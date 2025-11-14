@@ -43,7 +43,7 @@ public class MeetingController {
         } else {
             // Redirect frontend to signup page
             return ResponseEntity.status(302)
-                    .header("Location", "http://localhost:3000/signup?token=" + token)
+                    .header("Location", "https://interviewsite-frontend.vercel.signup?token=" + token)
                     .build();
         }
     }
@@ -142,6 +142,15 @@ public class MeetingController {
                         .status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Meeting not found")));
     }
+    @PostMapping("/reject")
+    public ResponseEntity<String> rejectInvite(@PathVariable String token) {
+        boolean result = meetingService.rejectInvite(token);
+        if (result) {
+            return ResponseEntity.ok("Invite rejected successfully!");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token");
+    }
+
 
 
 
