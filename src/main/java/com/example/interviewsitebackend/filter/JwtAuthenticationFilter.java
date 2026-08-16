@@ -26,6 +26,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/login") ||
+               path.startsWith("/api/auth/register") ||
+               path.startsWith("/api/auth/signup") ||
+               path.startsWith("/ws/") ||
+               path.equals("/api/meetings/accept");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
@@ -33,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // ✅ 1. Skip authentication for public endpoints
         String path = request.getServletPath();
-        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup")){
+        if (path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register") || path.startsWith("/api/auth/signup")){
             filterChain.doFilter(request, response);
             return;
         }

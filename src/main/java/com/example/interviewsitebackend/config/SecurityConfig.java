@@ -54,11 +54,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of(
-                "https://interviewsite-frontend.onrender.com",
-                "http://localhost:3000",
-                "https://interviewsite-frontend.vercel.app"
-        ));
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.addAllowedHeader("*"); // ✅ allow all headers
         config.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
