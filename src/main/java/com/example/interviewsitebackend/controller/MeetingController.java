@@ -43,7 +43,7 @@ public class MeetingController {
         } else {
             // Redirect frontend to signup page
             return ResponseEntity.status(302)
-                    .header("Location", "https://interviewsite-frontend.vercel.signup?token=" + token)
+                    .header("Location", "https://interviewsite-frontend.vercel.app/auth/signup?token=" + token)
                     .build();
         }
     }

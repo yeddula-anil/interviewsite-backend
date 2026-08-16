@@ -42,6 +42,7 @@ public class MeetingService {
                 .token(token)
                 .candidateEmail(meeting.getCandidateEmail())
                 .recruiterName(meeting.getRecruiterName())
+                .recruiterEmail(meeting.getRecruiterEmail())
                 .companyName(meeting.getCompanyName())
                 .companyLogoUrl(meeting.getCompanyLogoUrl())
                 .role(meeting.getRole())
@@ -126,8 +127,7 @@ public class MeetingService {
 
         if (userOpt.isPresent()) {
             // User exists → store meeting
-            Meeting meeting=storeMeeting(invite);
-            sendAcceptanceConfirmationEmail(meeting);
+            Meeting meeting = storeMeeting(invite);
             invite.setAccepted(true);
             inviteRepo.save(invite);
             return "accepted";
@@ -142,10 +142,9 @@ public class MeetingService {
             Optional<MeetingInviteToken> tokenOpt = inviteRepo.findByToken(token);
             if (tokenOpt.isPresent() && !tokenOpt.get().isAccepted()) {
                 MeetingInviteToken invite = tokenOpt.get();
-                Meeting meeting=storeMeeting(invite);
+                Meeting meeting = storeMeeting(invite);
                 invite.setAccepted(true);
                 inviteRepo.save(invite);
-                sendAcceptanceConfirmationEmail(meeting);
             }
         }
     }
@@ -153,6 +152,7 @@ public class MeetingService {
     private Meeting storeMeeting(MeetingInviteToken invite) {
         Meeting meeting = Meeting.builder()
                 .recruiterName(invite.getRecruiterName())
+                .recruiterEmail(invite.getRecruiterEmail())
                 .candidateEmail(invite.getCandidateEmail())
                 .companyName(invite.getCompanyName())
                 .companyLogoUrl(invite.getCompanyLogoUrl())

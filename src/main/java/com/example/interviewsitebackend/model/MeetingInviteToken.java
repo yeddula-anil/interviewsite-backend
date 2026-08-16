@@ -16,6 +16,7 @@ public class MeetingInviteToken {
     private String token;
     private String candidateEmail;
     private String recruiterName;
+    private String recruiterEmail;
     private String companyName;
     private String companyLogoUrl;
     private String role;

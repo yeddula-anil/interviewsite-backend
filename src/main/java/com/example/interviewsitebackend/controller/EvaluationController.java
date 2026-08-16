@@ -3,6 +3,7 @@ package com.example.interviewsitebackend.controller;
 
 import com.example.interviewsitebackend.model.Evaluation;
 import com.example.interviewsitebackend.repo.EvaluationRepository;
+import com.example.interviewsitebackend.service.EvaluationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -18,13 +19,33 @@ import java.util.*;
 public class EvaluationController {
 
     private final EvaluationRepository evaluationRepository;
+    private final EvaluationService evaluationService;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${deepgram.api.key}")
+    @Value("${deepgram.api.key:}")
     private String deepgramApiKey;
 
-    public EvaluationController(EvaluationRepository evaluationRepository) {
+    public EvaluationController(EvaluationRepository evaluationRepository, EvaluationService evaluationService) {
         this.evaluationRepository = evaluationRepository;
+        this.evaluationService = evaluationService;
+    }
+
+    @PostMapping("/evaluate/{meetingId}")
+    public ResponseEntity<?> evaluateMeeting(@PathVariable String meetingId) {
+        try {
+            Map<String, Object> result = evaluationService.evaluateMeeting(meetingId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{meetingId}")
+    public ResponseEntity<?> getEvaluation(@PathVariable String meetingId) {
+        return evaluationRepository.findById(meetingId)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Evaluation not found for meeting: " + meetingId)));
     }
 
     /**
